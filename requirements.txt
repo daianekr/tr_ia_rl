@@ -1,2 +1,4 @@
 gymnasium[classic-control]
 matplotlib
+opencv-contrib-python
+tensorflow >= 1.15.0, <=2.0.0

@@ -28,8 +28,8 @@ def run(episodes,is_training=True, render=False):
 
     for i in range(episodes):
         state = env.reset()[0]
-        state_p = np.digitalize(state[0], pos_space)
-        state_v = np.digitalize(state[1], vel_space)
+        state_p = np.digitize(state[0], pos_space)
+        state_v = np.digitize(state[1], vel_space)
 
         terminated = False
 
@@ -43,8 +43,8 @@ def run(episodes,is_training=True, render=False):
             # action = env.action_space.sample()
 
             new_state, reward, terminated,_,_ = env.step(action)
-            new_state_p = np.digitalize(new_state[0], pos_space)
-            new_state_v = np.digitalize(new_state[1], vel_space)
+            new_state_p = np.digitize(new_state[0], pos_space)
+            new_state_v = np.digitize(new_state[1], vel_space)
             if is_training:
                 q[state_p][state_v][action] = q[state_p][state_v][action] + learning_rate * (
                     reward + discount_factor * np.max(q[new_state_p,new_state_v,:]) - q[state_p,state_v,action]
@@ -74,4 +74,5 @@ def run(episodes,is_training=True, render=False):
 
 
 if __name__ == '__main__':
-    run(1, is_training=True, render=True)
+    # run(5000, is_training=True, render=False)
+    run(100, is_training=False, render=True)
