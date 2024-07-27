@@ -4,3 +4,4 @@ matplotlib
 opencv-contrib-python
 tensorflow
 stable-baselines3
+moviepy
