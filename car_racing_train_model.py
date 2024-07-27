@@ -16,6 +16,9 @@ TRAINING_BATCH_SIZE = 64
 SAVE_TRAINING_FREQUENCY = 25
 UPDATE_TARGET_MODEL_FREQUENCY = 5
 LOG_DIR = './logs'
+LEARNING_RATE = 0.001
+GAMMA = 0.99
+EPSILON_DECAY = 0.995
 
 def ensure_directory_exists(directory):
     if not os.path.exists(directory):
@@ -31,13 +34,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Cria os diretórios 'save' e 'logs' se não existirem
-    save_dir = './save'
+    save_dir = './save_1'
     ensure_directory_exists(save_dir)
     ensure_directory_exists(LOG_DIR)
 
     # Configura o ambiente e o agente
     env = gym.make('CarRacing-v2', render_mode='human' if RENDER else 'rgb_array')
-    agent = CarRacingDQNAgent(epsilon=args.epsilon)
+    agent = CarRacingDQNAgent(epsilon=args.epsilon, learning_rate=LEARNING_RATE, gamma=GAMMA)
     if args.model:
         agent.load(args.model)
     if args.start:
@@ -97,7 +100,11 @@ if __name__ == '__main__':
             agent.update_target_model()
 
         if e % SAVE_TRAINING_FREQUENCY == 0:
-            model_save_path = os.path.join(save_dir, f'trial_{e}.h5')
+            model_save_path = os.path.join(save_dir, f'trial_{e}.weights.h5')
             agent.save(model_save_path)
+
+        # Decaimento do epsilon
+        if agent.epsilon > 0.1:  # Epsilon mínimo
+            agent.epsilon *= EPSILON_DECAY
 
     env.close()
