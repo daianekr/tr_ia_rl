@@ -1,19 +1,28 @@
 import argparse
 import gymnasium as gym
 from collections import deque
+import os
 from car_racing import CarRacingDQNAgent
 from car_racing import process_state_image
 from car_racing import generate_state_frame_stack_from_queue
+from tensorflow.keras.callbacks import TensorBoard
 
-RENDER = True
+# Configurações
+RENDER = False
 STARTING_EPISODE = 1
 ENDING_EPISODE = 1000
 SKIP_FRAMES = 2
 TRAINING_BATCH_SIZE = 64
 SAVE_TRAINING_FREQUENCY = 25
 UPDATE_TARGET_MODEL_FREQUENCY = 5
+LOG_DIR = './logs'
+
+def ensure_directory_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 if __name__ == '__main__':
+    # Argumentos da linha de comando
     parser = argparse.ArgumentParser(description='Training a DQN agent to play CarRacing.')
     parser.add_argument('-m', '--model', help='Specify the last trained model path if you want to continue training after it.')
     parser.add_argument('-s', '--start', type=int, help='The starting episode, default to 1.')
@@ -21,6 +30,12 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--epsilon', type=float, default=1.0, help='The starting epsilon of the agent, default to 1.0.')
     args = parser.parse_args()
 
+    # Cria os diretórios 'save' e 'logs' se não existirem
+    save_dir = './save'
+    ensure_directory_exists(save_dir)
+    ensure_directory_exists(LOG_DIR)
+
+    # Configura o ambiente e o agente
     env = gym.make('CarRacing-v2', render_mode='human' if RENDER else 'rgb_array')
     agent = CarRacingDQNAgent(epsilon=args.epsilon)
     if args.model:
@@ -30,6 +45,10 @@ if __name__ == '__main__':
     if args.end:
         ENDING_EPISODE = args.end
 
+    # Inicializa o TensorBoard
+    tensorboard_callback = TensorBoard(log_dir=LOG_DIR, histogram_freq=1)
+
+    # Loop de treinamento
     for e in range(STARTING_EPISODE, ENDING_EPISODE + 1):
         init_state, _ = env.reset()
         init_state = process_state_image(init_state)
@@ -78,6 +97,7 @@ if __name__ == '__main__':
             agent.update_target_model()
 
         if e % SAVE_TRAINING_FREQUENCY == 0:
-            agent.save(f'./save/trial_{e}.h5')
+            model_save_path = os.path.join(save_dir, f'trial_{e}.h5')
+            agent.save(model_save_path)
 
     env.close()
