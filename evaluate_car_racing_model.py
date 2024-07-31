@@ -5,10 +5,16 @@ from car_racing import CarRacingDQNAgent
 from car_racing import process_state_image
 from car_racing import generate_state_frame_stack_from_queue
 from collections import deque
+from gymnasium.wrappers import RecordVideo
 
 # Configurações
-RENDER = True  # Habilitar a renderização para visualizar o desempenho do agente
+RENDER = False  # Desabilitar a renderização humana para gravação de vídeo
 NUM_EPISODES = 5  # Número de episódios para avaliação
+VIDEO_DIR = './video'  # Diretório para salvar os vídeos
+
+def ensure_directory_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 def evaluate_model(model_path, env, agent):
     # Carregar os pesos do modelo treinado
@@ -28,8 +34,6 @@ def evaluate_model(model_path, env, agent):
 
             current_state_frame_stack = generate_state_frame_stack_from_queue(state_frame_stack_queue)
             action = agent.act(current_state_frame_stack)  # Remover argumento 'train'
-            
-            print(f"Ação tomada: {action}")  # Adicione esta linha para verificar as ações
 
             next_state, reward, done, _, _ = env.step(action)
             total_reward += reward
@@ -46,9 +50,17 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', required=True, help='Specify the model path to evaluate.')
     args = parser.parse_args()
 
-    # Configurar o ambiente e o agente
-    env = gym.make('CarRacing-v2', render_mode='human' if RENDER else 'rgb_array')
+    # Cria o diretório de vídeo se não existir
+    ensure_directory_exists(VIDEO_DIR)
+
+    # Configurar o ambiente com gravação de vídeo e o agente
+    env = gym.make('CarRacing-v2', render_mode='rgb_array')
+    env = RecordVideo(env, video_folder=VIDEO_DIR, episode_trigger=lambda e: True)
     agent = CarRacingDQNAgent(epsilon=0.0)  # Epsilon zero para avaliação (não queremos exploração durante a avaliação)
 
-    # Avaliar o modelo
-    evaluate_model(args.model, env, agent)
+    try:
+        # Avaliar o modelo
+        evaluate_model(args.model, env, agent)
+    finally:
+        # Garantir que o ambiente seja fechado corretamente
+        env.close()
